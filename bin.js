@@ -46,13 +46,17 @@ if (argv.image[0] !== '/') argv.image = '/' + argv.image
 var mirrored = join(argv.dir, './tmp')
 var mnt = join(argv.dir, './mnt')
 var writtenBlocks = pager(4096)
+var totalDownloaded = 0
+var blocks = 0
 
-// TODO: fix bug with this firing twice!!
-// archive.once('content', function () {
-//   archive.content.on('download', function (index, data) {
-//     console.log('download(idx=%d, data=%d, total=%d)', index, data.length, total += data.length)
-//   })
-// })
+archive.once('content', function () {
+  archive.content.on('download', function (index, data) {
+    totalDownloaded += data.length
+    blocks++
+  })
+})
+
+if (argv.stats) onstats()
 
 archive.on('ready', function () {
   hyperdiscovery(archive, {live: true})
@@ -184,6 +188,22 @@ function sigint () {
   })
 }
 
+function onstats () {
+  console.log('(Stats server listening on 10000)')
+  require('http').createServer(function (req, res) {
+    var interval = setInterval(stats, 1000)
+    stats()
+    res.on('close', function () {
+      clearInterval(interval)
+    })
+
+    function stats () {
+      res.write('Bytes downloaded  = ' + totalDownloaded + '\n')
+      res.write('Blocks downloaded = ' + blocks + '\n')
+    }
+  }).listen(10000)
+}
+
 function check () {
   if (nspawn) return
   archive.stat(argv.image, function (err, st) {
@@ -191,6 +211,7 @@ function check () {
 
     var args = ['-i', join(mnt, argv.image)]
     if (argv.boot) args.push('-b')
+    else if (argv.quiet !== false) args.push('-q')
     if (argv.bind) args.push('--bind', argv.bind)
 
     Object.keys(argv).forEach(function (k) {
@@ -201,7 +222,6 @@ function check () {
     })
 
     argv._.forEach(function (a) {
-      console.log('a', a)
       args.push(a)
     })
 

@@ -37,15 +37,35 @@ You are now ready to boot the image over Dat.
 On a guest machine simply install dat-container and run
 
 ``` sh
+# do a full container boot
 sudo dat-container -i arch.img --key <dat-key-from-above> -b
 ```
 
 That's it! The image will now live boot over the network!
 
+To run a single command (also live)
+
+```
+# run uname -a
+sudo dat-container -i arch.img --key <dat-key-from-above> -- uname -a
+```
+
+Any argument prefixed with `--sn-` is automatically forwarded to systemd-nspawn.
+
 ## How can I help?
 
 This tool needs more cool options, features, and documentation.
 All help is appreciated.
+
+## Created files look big?
+
+Don't worry. All files are usually very sparse and small on disk even though
+they look like they take up gigabytes of space. To see the actual size run
+
+```
+# show actual blocks used on disk as the first column
+ls -shl
+```
 
 ## License
 
