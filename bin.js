@@ -71,7 +71,7 @@ try {
   // do nothing
 }
 
-fuse.unmount(mnt, mount)
+unmount(mnt, mount)
 
 function mount () {
   fuse.mount(mnt, {
@@ -183,7 +183,7 @@ function toErrno (err) {
 }
 
 function sigint () {
-  fuse.unmount(mnt, function () {
+  unmount(mnt, function () {
     process.exit(1)
   })
 }
@@ -230,9 +230,14 @@ function check () {
       stdio: 'inherit'
     })
     nspawn.on('exit', function (code) {
-      fuse.unmount(mnt, function () {
+      unmount(mnt, function () {
         process.exit(code)
       })
     })
   })
+
+}
+
+function unmount (mnt, cb) {
+  proc.spawn('umount', ['-f', mnt]).on('exit', cb)
 }
