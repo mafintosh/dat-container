@@ -51,16 +51,19 @@ var blocks = 0
 var lastBlocks = []
 
 var range = null
+var bufferSize = parseInt(argv.buffer || 0, 10)
 
 archive.once('content', function () {
   archive.content.allowPush = true
   archive.content.on('download', function (index, data) {
     if (range) archive.content.undownload(range)
-    range = archive.content.download({
-      start: index,
-      end: Math.min(archive.content.length, index + 10),
-      linear: true
-    })
+    if (bufferSize) {
+      range = archive.content.download({
+        start: index,
+        end: Math.min(archive.content.length, index + bufferSize),
+        linear: true
+      })
+    }
 
     totalDownloaded += data.length
     blocks++
