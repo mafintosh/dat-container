@@ -53,6 +53,7 @@ var lastBlocks = []
 var range = null
 
 archive.once('content', function () {
+  archive.content.allowPush = true
   archive.content.on('download', function (index, data) {
     if (range) archive.content.undownload(range)
     range = archive.content.download({
