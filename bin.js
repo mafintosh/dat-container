@@ -48,11 +48,14 @@ var mnt = join(argv.dir, './mnt')
 var writtenBlocks = pager(4096)
 var totalDownloaded = 0
 var blocks = 0
+var lastBlocks = []
 
 archive.once('content', function () {
   archive.content.on('download', function (index, data) {
     totalDownloaded += data.length
     blocks++
+    lastBlocks.push(index)
+    if (lastBlocks.length > 10) lastBlocks.shift()
   })
 })
 
@@ -198,8 +201,9 @@ function onstats () {
     })
 
     function stats () {
-      res.write('Bytes downloaded  = ' + totalDownloaded + '\n')
-      res.write('Blocks downloaded = ' + blocks + '\n')
+      res.write('Bytes downloaded  : ' + totalDownloaded + '\n')
+      res.write('Blocks downloaded : ' + blocks + '\n')
+      res.write('Last blocks       : ' + lastBlocks.join(' '))
     }
   }).listen(10000)
 }
