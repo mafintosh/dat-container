@@ -34,8 +34,9 @@ if (process.getuid() !== 0) {
   process.exit(2)
 }
 
+var indexLoaded = false
 var nspawn = null
-var storage = !argv.ram ? join(argv.dir, './archive') : require('random-access-memory')
+var storage = (!argv.ram && !argv.index) ? join(argv.dir, './archive') : require('random-access-memory')
 var archive = hyperdrive(storage, argv.key && argv.key.replace('dat://', ''), {
   createIfMissing: false,
   sparse: true
@@ -43,6 +44,7 @@ var archive = hyperdrive(storage, argv.key && argv.key.replace('dat://', ''), {
 
 if (argv.image[0] !== '/') argv.image = '/' + argv.image
 
+var track = argv.index ? fs.createWriteStream(argv.index) : null
 var mirrored = join(argv.dir, './tmp')
 var mnt = join(argv.dir, './mnt')
 var writtenBlocks = pager(4096)
@@ -56,6 +58,7 @@ var bufferSize = parseInt(argv.buffer || 0, 10)
 archive.once('content', function () {
   archive.content.allowPush = true
   archive.content.on('download', function (index, data) {
+    if (track) track.write('' + index + '\n')
     if (range) archive.content.undownload(range)
     if (bufferSize) {
       range = archive.content.download({
@@ -223,7 +226,53 @@ function onstats () {
   }).listen(10000)
 }
 
+function checkIndex () {
+  archive.readFile(argv.image + '.index', function (_, buf) {
+    if (!buf) return
+    indexLoaded = true
+
+    var btm = 0
+    var indexes = buf.toString('utf-8').trim().split('\n').map(function (n) {
+      return parseInt(n, 10)
+    })
+
+    archive.once('content', update)
+    update()
+
+    function update () {
+      if (!archive.content) return
+
+      while (btm < indexes.length) {
+        if (archive.content.has(indexes[btm])) {
+          btm++
+        } else {
+          break
+        }
+      }
+
+      var missing = 5
+
+      for (var i = btm; i < indexes.length && missing; i++) {
+        var idx = indexes[i]
+        if (archive.content.has(idx)) continue
+        missing--
+        if (downloading(idx)) continue
+        archive.content.download(idx, update)
+      }
+    }
+
+    function downloading (index) {
+      for (var i = 0; i < archive.content._selections.length; i++) {
+        var s = archive.content._selections[i]
+        if (s.start <= index && index < s.end) return true
+      }
+      return false
+    }
+  })
+}
+
 function check () {
+  if (!indexLoaded) checkIndex()
   if (nspawn) return
   archive.stat(argv.image, function (err, st) {
     if (err || nspawn) return
