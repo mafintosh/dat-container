@@ -182,6 +182,7 @@ function mount () {
     if (err) throw err
     check()
     archive.metadata.on('remote-update', check)
+    archive.metadata.on('append', check)
   })
 }
 
