@@ -50,12 +50,21 @@ var totalDownloaded = 0
 var blocks = 0
 var lastBlocks = []
 
+var range = null
+
 archive.once('content', function () {
   archive.content.on('download', function (index, data) {
+    if (range) archive.content.undownload(range)
+    range = archive.content.download({
+      start: index,
+      end: Math.min(archive.content.length, index + 10),
+      linear: true
+    })
+
     totalDownloaded += data.length
     blocks++
     lastBlocks.push(index)
-    if (lastBlocks.length > 10) lastBlocks.shift()
+    if (lastBlocks.length > 5) lastBlocks.shift()
   })
 })
 
@@ -203,7 +212,7 @@ function onstats () {
     function stats () {
       res.write('Bytes downloaded  : ' + totalDownloaded + '\n')
       res.write('Blocks downloaded : ' + blocks + '\n')
-      res.write('Last blocks       : ' + lastBlocks.join(' '))
+      res.write('Last blocks       : ' + lastBlocks.join(' ') + '\n')
     }
   }).listen(10000)
 }
