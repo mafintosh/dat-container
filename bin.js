@@ -197,6 +197,7 @@ function toErrno (err) {
 }
 
 function sigint () {
+  if (nspawn) return process.kill(nspawn.pid, 'SIGKILL')
   unmount(mnt, function () {
     process.exit(1)
   })
