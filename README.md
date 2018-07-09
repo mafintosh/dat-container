@@ -10,7 +10,7 @@ Requires systemd-nspawn and fuse installed.
 
 ## Usage
 
-One a host (linux) machine allocate a sparse file, format it, mount it, and install a distro inside, and unmount it
+On a host (linux) machine allocate a sparse file, format it, mount it, and install a distro inside, and unmount it
 
 ``` sh
 # installing arch from arch
